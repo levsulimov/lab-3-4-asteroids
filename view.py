@@ -1,5 +1,3 @@
-"""Отрисовка Canvas, тайловый взрыв и обработчики событий."""
-
 import math
 import random
 import time
@@ -10,7 +8,6 @@ from models import Game
 
 
 def polygon_points(x, y, radius, angle, outline):
-    """Преобразовать полярный контур в экранные координаты вершин."""
     points = []
     for i, scale in enumerate(outline):
         phase = angle + i * math.tau / len(outline)
@@ -20,10 +17,8 @@ def polygon_points(x, y, radius, angle, outline):
 
 
 class App:
-    """Показывать игру и передавать управление независимой модели."""
 
     def __init__(self):
-        """Создать Canvas, графические ресурсы и обработчики ввода."""
         self.root = tk.Tk()
         self.root.title("Астероиды • Сулимов Л. И. • ПИ25-2")
         self.root.resizable(False, False)
@@ -53,15 +48,12 @@ class App:
         self.tick()
 
     def run(self):
-        """Запустить главный цикл tkinter."""
         self.root.mainloop()
 
     def make_explosion_tiles(self):
-        """Создать спрайт-лист и вырезать прозрачные тайлы взрыва."""
         size = cfg.TILE_SIZE
         sheet = tk.PhotoImage(width=size * cfg.EXPLOSION_FRAMES,
                               height=size)
-        # Рисуем собственный спрайт-лист: расширяющееся огненное кольцо.
         for frame in range(cfg.EXPLOSION_FRAMES):
             progress = frame / (cfg.EXPLOSION_FRAMES - 1)
             radius = 5 + progress * (size / 2 - 8)
@@ -83,7 +75,6 @@ class App:
         return frames
 
     def on_click(self, event):
-        """Начать игру исключительно щелчком по прямоугольнику меню."""
         x1, y1, x2, y2 = cfg.SPLASH
         if (self.game.state in ("menu", "over")
                 and x1 <= event.x <= x2 and y1 <= event.y <= y2):
@@ -92,7 +83,6 @@ class App:
             self.game.start()
 
     def on_key_down(self, event):
-        """Включить движение, стрельбу или переключить паузу."""
         key = event.keysym
         if key.lower() == "p" and key not in self.keys:
             if self.game.state == "running":
@@ -103,25 +93,20 @@ class App:
         self.keys.add(key)
 
     def on_key_up(self, event):
-        """Отключить действие после отпускания клавиши."""
         self.keys.discard(event.keysym)
 
     def on_focus_out(self, event):
-        """Сбросить зажатые клавиши и приостановить игру без фокуса."""
         self.keys.clear()
         if self.game.state == "running":
             self.paused = True
 
     def tick(self):
-        """Обновить физику малыми шагами и нарисовать текущий кадр."""
         now = time.perf_counter()
         dt = min(now - self.last_time, 0.1)
         self.last_time = now
         self.background_offset = (self.background_offset
                                   + cfg.BACKGROUND_SPEED * dt) % cfg.WIDTH
         if not self.paused:
-            # Подшаги ограничивают путь ракеты и предотвращают пролёт
-            # сквозь астероид при временном падении частоты кадров.
             remaining = dt
             while remaining > 0:
                 step = min(remaining, 1 / 120)
@@ -131,12 +116,10 @@ class App:
         self.root.after(round(1000 / cfg.FPS), self.tick)
 
     def text(self, x, y, value, size=12, color=cfg.TEXT, anchor="center"):
-        """Вывести текст с общим оформлением."""
         self.canvas.create_text(x, y, text=value, fill=color,
                                 font=("Segoe UI", size), anchor=anchor)
 
     def copies(self, x, y, radius):
-        """Вернуть видимые копии объекта у швов тора, включая углы."""
         for dx in (-cfg.WIDTH, 0, cfg.WIDTH):
             for dy in (-cfg.HEIGHT, 0, cfg.HEIGHT):
                 px, py = x + dx, y + dy
@@ -145,7 +128,6 @@ class App:
                     yield px, py
 
     def draw_background(self):
-        """Нарисовать неподвижные звёзды и полупрозрачный движущийся слой."""
         c = self.canvas
         for x, y, size in self.stars:
             c.create_oval(x, y, x + size, y + size,
@@ -155,19 +137,16 @@ class App:
             for px, py in self.copies(x, y, radius):
                 points = polygon_points(px, py, radius, angle,
                                         (1, .75, .9, .7, 1, .8, .95))
-                # Stipple пропускает фон в половине пикселей полигона.
                 c.create_polygon(points, fill="#26364d", stipple="gray50",
                                  outline="#1b293d")
 
     def draw_ship(self):
-        """Нарисовать корабль с отдельным изображением работающего сопла."""
         ship = self.game.ship
         c = self.canvas
         for x, y in self.copies(ship.x, ship.y, 32):
             cosine, sine = math.cos(ship.angle), math.sin(ship.angle)
 
             def transform(vertices):
-                """Повернуть локальные вершины вокруг центра корабля."""
                 result = []
                 for px, py in vertices:
                     result.extend((x + px * cosine - py * sine,
@@ -187,7 +166,6 @@ class App:
                               outline="#376b87", dash=(4, 5))
 
     def draw(self):
-        """Нарисовать сцену, HUD и заставку или надпись паузы."""
         c = self.canvas
         c.delete("all")
         self.draw_background()

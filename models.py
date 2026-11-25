@@ -1,5 +1,3 @@
-"""Кинематика и столкновения без зависимости от tkinter."""
-
 from dataclasses import dataclass
 import math
 import random
@@ -8,7 +6,6 @@ import config as cfg
 
 
 def distance(a, b):
-    """Вычислить кратчайшее расстояние между объектами на торе."""
     dx = abs(a.x - b.x) % cfg.WIDTH
     dy = abs(a.y - b.y) % cfg.HEIGHT
     return math.hypot(min(dx, cfg.WIDTH - dx),
@@ -16,13 +13,11 @@ def distance(a, b):
 
 
 def touches(a, b):
-    """Проверить пересечение круговых оболочек объектов."""
     return distance(a, b) <= a.radius + b.radius
 
 
 @dataclass
 class Body:
-    """Объект с линейной и угловой скоростью на тороидальном поле."""
 
     x: float
     y: float
@@ -33,7 +28,6 @@ class Body:
     radius: float = 10
 
     def move(self, dt):
-        """Сдвинуть объект, сохранив скорости при переходе границ."""
         self.x = (self.x + self.vx * dt) % cfg.WIDTH
         self.y = (self.y + self.vy * dt) % cfg.HEIGHT
         self.angle = (self.angle + self.spin * dt) % math.tau
@@ -41,14 +35,12 @@ class Body:
 
 @dataclass
 class Ship(Body):
-    """Корабль с двигателем, торможением и временной защитой."""
 
     radius: float = cfg.SHIP_RADIUS
     shield: float = 0
     thrust: bool = False
 
     def update(self, dt, keys):
-        """Применить управление и обновить положение корабля."""
         self.spin = (int("Right" in keys) - int("Left" in keys))
         self.spin *= cfg.TURN_SPEED
         self.thrust = "Up" in keys
@@ -71,14 +63,12 @@ class Ship(Body):
 
 @dataclass
 class Asteroid(Body):
-    """Астероид с неизменным неровным контуром."""
 
     outline: tuple = ()
 
 
 @dataclass
 class Missile(Body):
-    """Ракета с ограниченным временем жизни."""
 
     radius: float = 3
     life: float = cfg.MISSILE_LIFETIME
@@ -86,7 +76,6 @@ class Missile(Body):
 
 @dataclass
 class Explosion:
-    """Позиция и возраст однократно проигрываемой тайловой анимации."""
 
     x: float
     y: float
@@ -94,17 +83,14 @@ class Explosion:
 
     @property
     def frame(self):
-        """Получить индекс текущего тайла спрайт-листа."""
         fraction = self.age / cfg.EXPLOSION_DURATION
         return min(cfg.EXPLOSION_FRAMES - 1,
                    int(fraction * cfg.EXPLOSION_FRAMES))
 
 
 class Game:
-    """Управлять партиями, генерацией объектов, выстрелами и уроном."""
 
     def __init__(self, rng=None):
-        """Подготовить начальное меню со счётом 0 и тремя жизнями."""
         self.rng = rng if rng is not None else random.Random()
         self.score = 0
         self.lives = cfg.INITIAL_LIVES
@@ -117,7 +103,6 @@ class Game:
         self.fire_timer = 0
 
     def start(self):
-        """Сбросить счёт и создать неподвижный корабль в центре."""
         self.score = 0
         self.lives = cfg.INITIAL_LIVES
         self.state = "running"
@@ -129,12 +114,10 @@ class Game:
         self.respawn()
 
     def respawn(self):
-        """Вернуть корабль в центр с защитой от повторного удара."""
         self.ship = Ship(cfg.WIDTH / 2, cfg.HEIGHT / 2,
                          angle=-math.pi / 2, shield=cfg.RESPAWN_SHIELD)
 
     def spawn(self):
-        """Попытаться создать астероид на безопасном удалении."""
         if len(self.asteroids) >= cfg.MAX_ASTEROIDS:
             return
         for _ in range(30):
@@ -159,7 +142,6 @@ class Game:
         self.asteroids.append(rock)
 
     def fire(self):
-        """Выпустить ракету из носа с фиксированной мировой скоростью."""
         if self.state != "running" or self.fire_timer > 0:
             return
         ship = self.ship
@@ -173,7 +155,6 @@ class Game:
         self.fire_timer = cfg.FIRE_INTERVAL
 
     def hit_ship(self, rock):
-        """Обработать удар; при нуле жизней до удара завершить игру."""
         self.asteroids.remove(rock)
         self.explosions.append(Explosion(rock.x, rock.y))
         if self.lives == 0:
@@ -187,7 +168,6 @@ class Game:
             self.respawn()
 
     def update(self, dt, keys):
-        """Продвинуть симуляцию на малый шаг и разрешить столкновения."""
         if self.state != "running":
             return
         self.fire_timer = max(0, self.fire_timer - dt)
@@ -208,7 +188,6 @@ class Game:
             missile.move(dt)
             missile.life -= dt
         self.missiles = [m for m in self.missiles if m.life > 0]
-        # Копии списков позволяют удалять столкнувшиеся объекты безопасно.
         for missile in self.missiles[:]:
             for rock in self.asteroids[:]:
                 if touches(missile, rock):

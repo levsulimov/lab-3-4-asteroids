@@ -1,5 +1,3 @@
-"""Точка входа в лабораторную работу 3.4."""
-
 import os
 from pathlib import Path
 import sys
@@ -9,7 +7,6 @@ from view import App
 
 
 def prepare_tk():
-    """Поддержать Windows Python с Tcl/Tk, упакованным в ZIP."""
     source = Path(sys.base_prefix) / "tcl"
     target = Path(__file__).resolve().parent / "venv" / "tcl-runtime"
     for library, variable, marker in (
@@ -27,7 +24,6 @@ def prepare_tk():
 
 
 def main():
-    """Создать окно и запустить игру."""
     prepare_tk()
     App().run()
 
